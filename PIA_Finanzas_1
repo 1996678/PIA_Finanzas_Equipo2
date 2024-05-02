@@ -1,0 +1,220 @@
+from datetime import datetime, timedelta, date
+import random
+# Fecha inicial para la generación de facturas
+fecha_generacion_inicial = datetime(2023, 1, 12)
+dias_aumento = 5
+
+def generar_fecha_aleatoria():
+    global fecha_generacion_inicial
+    fecha_generacion = fecha_generacion_inicial
+    fecha_generacion_inicial += timedelta(days=dias_aumento)
+    return fecha_generacion
+
+nombres_clientes = [
+    "Innova Solutions",
+    "Global Ventures",
+    "Future Dynamics",
+    "Elite Enter",
+    "Apex Innovations",
+    "Quantum Enterprises",
+    "Synergy Solutions",
+    "Evolutionary Tech",
+    "Horizon Corporation",
+    "Nexus Innovations",
+    "Stellar Solutions",
+    "Fusion Enterprises",
+    "Prodigy Technologies",
+    "Infinity Industries",
+    "Vanguard Ventures",
+    "Candy Innovation",
+    "Alpha Omega",
+    "Echelon Solutions",
+    "Empowerment PCS",
+    "Summertime Dynamics",
+    "Catalyst Corporation",
+    "NFR Corp",
+    "Prime Innovations",
+    "Sunshine Solutions",
+    "Del Rey Enterprises",
+    "Genesis Group",
+    "Apple Technologies",
+    "Quantum Enterprises",
+    "Renaissance Ltd.",
+    "Summit Ventures",
+    "Empower Enterprises",
+    "Peak Innovations",
+    "Quantum Dynamic",
+    "Eternal Corporation",
+    "Vision Enterprises",
+    "West Coast Tech",
+    "Simple Unlimited",
+    "Spectrum Ventures",
+    "Apex Dynamics Ltd.",
+    "Alpha Innovations",
+    "Infinity Company",
+    "Elevation High",
+    "Prodigy Enterprises",
+    "Momentum Ventures",
+    "Visionary People",
+    "Nexus Dynamics Ltd.",
+    "Innodbtech Corp.",
+    "Synergy Innovations",
+    "Genesis Dynamics",
+    "Horizon Innovations"
+]
+
+numero_factura_global = 0
+
+def generar_clientes_con_facturas(num_clientes, num_facturas_max):
+    global numero_factura_global
+    clientes = []
+    for numero_cliente in range(1, num_clientes + 1):
+        nombre_cliente = random.choice(nombres_clientes)
+        num_facturas = random.randint(1, num_facturas_max)
+        facturas = []
+        for num_factura in range(numero_factura_global + 1, numero_factura_global + num_facturas + 1):
+            fecha_generacion = generar_fecha_aleatoria()
+            fecha_vencimiento = fecha_generacion + timedelta(days=30)  # Vencimiento 30 días después de generación
+
+            fecha_actual = date(2023, 12, 31)
+            dias_vencimiento = max(0, (fecha_actual - fecha_vencimiento.date()).days)
+
+            factura = {
+                "numero_factura": num_factura,  # Ajustar la numeración de factura según la cantidad real generada
+                "saldo": random.randint(1500, 3000),
+                "fecha_generacion": fecha_generacion,
+                "fecha_vencimiento": fecha_vencimiento,
+                "dias_vencimiento": dias_vencimiento}
+
+            facturas.append(factura)
+
+        cliente = {
+            "numero_cliente": numero_cliente,
+            "cliente": nombre_cliente,
+            "facturas": facturas
+        }
+        clientes.append(cliente)
+        numero_factura_global += num_facturas
+    return clientes
+
+# Generar clientes con nombres aleatorios
+clientes_con_facturas = generar_clientes_con_facturas(50, 4)
+
+def clasificar_facturas_por_antiguedad(clientes):
+    corriente = []
+    vencido_30 = []
+    vencido_60 = []
+    vencido_90 = []
+    vencido_mas_90 = []
+
+    for cliente in clientes:
+        for factura in cliente["facturas"]:
+            if factura["dias_vencimiento"] == 0:
+                corriente.append((cliente["cliente"], factura))
+            elif factura["dias_vencimiento"] <= 30:
+                vencido_30.append((cliente["cliente"], factura))
+            elif factura["dias_vencimiento"] <= 60:
+                vencido_60.append((cliente["cliente"], factura))
+            elif factura["dias_vencimiento"] <= 90:
+                vencido_90.append((cliente["cliente"], factura))
+            else:
+                vencido_mas_90.append((cliente["cliente"], factura))
+
+    return corriente, vencido_30, vencido_60, vencido_90, vencido_mas_90
+
+corriente, vencido_30, vencido_60, vencido_90, vencido_mas_90 = clasificar_facturas_por_antiguedad(clientes_con_facturas)
+
+def generar_reporte_corporativo_facturas(clientes):
+    total_saldo = sum(factura["saldo"] for cliente in clientes for factura in cliente["facturas"])
+    total_facturas = sum(len(cliente["facturas"]) for cliente in clientes)
+
+    # Identificar facturas incobrables
+    facturas_incobrables = [(cliente["cliente"], factura) for cliente in clientes for factura in cliente["facturas"] if factura["dias_vencimiento"] > 90]
+    monto_incobrables = sum(factura[1]["saldo"] for factura in facturas_incobrables) 
+
+    porcentaje_incobrables = monto_incobrables / total_saldo if total_saldo > 0 else 0  # Evita la división por cero
+
+    # Identificar el mejor cliente (factura con menos días de vencimiento)
+    facturas_corrientes = [(cliente["cliente"], factura) for cliente in clientes for factura in cliente["facturas"] if factura["dias_vencimiento"] <= 30]
+    #print(facturas_corrientes)
+    mejor_cliente = min(facturas_corrientes, key=lambda x: x[1]["dias_vencimiento"])[0] if facturas_corrientes else None
+    
+    # Identificar clientes que dejaron de comprar (con facturas clasificadas como MALOS)
+    clientes_que_dejaron_de_comprar = [cliente["cliente"] for cliente in clientes if any(factura["dias_vencimiento"] > 90 for factura in cliente["facturas"])]
+
+    # Clasificar clientes
+    buenos = [cliente["cliente"] for cliente in clientes if all(factura["dias_vencimiento"] == 0 for factura in cliente["facturas"])]
+    regular = [cliente["cliente"] for cliente in clientes if any(1 <= factura["dias_vencimiento"] <= 30 for factura in cliente["facturas"])]
+    malos = [cliente["cliente"] for cliente in clientes if any(31 <= factura["dias_vencimiento"] <= 60 for factura in cliente["facturas"])]
+    incobrables = [cliente["cliente"] for cliente in clientes if any(factura["dias_vencimiento"] > 90 for factura in cliente["facturas"])]
+
+    reporte = {
+        "total_saldo": total_saldo,
+        "total_facturas": total_facturas,
+        "porcentaje_incobrables": porcentaje_incobrables,
+        "monto_incobrables": monto_incobrables,
+        "mejor_cliente": mejor_cliente,
+        "clientes_que_dejaron_de_comprar": clientes_que_dejaron_de_comprar,
+        "buenos": buenos,
+        "regular": regular,
+        "malos": malos,
+        "incobrables": incobrables
+    }
+
+    return reporte
+
+reporte_corporativo_facturas = generar_reporte_corporativo_facturas(clientes_con_facturas)
+
+# Reporte Corporativo
+import datetime
+
+print(f"ANTIGÜEDAD DE SALDOS AL DÍA : 31 DE DICIEMBRE DEL 2023")
+
+print(f"\nTotal General Saldo de Cuentas: ${reporte_corporativo_facturas['total_saldo']:,}")
+print(f"Total Cuentas: {reporte_corporativo_facturas['total_facturas']}")
+print(f"\nPorcentaje de Facturas Incobrables: {reporte_corporativo_facturas['porcentaje_incobrables']:.2f} %")
+print(f"Monto de Facturas Incobrables: ${reporte_corporativo_facturas['monto_incobrables']:,}")
+print(f"\nMejor Cliente: {reporte_corporativo_facturas['mejor_cliente']}")
+clientes_que_dejaron_de_comprar = reporte_corporativo_facturas['clientes_que_dejaron_de_comprar']
+print("\nClientes que dejaron de comprar:")
+for cliente in clientes_que_dejaron_de_comprar:
+    print(f"- {cliente}")
+
+
+print('\n')
+print("*" * 50)
+
+print(f"\nAGING BALANCE AS OF DECEMBER 31, 2023")
+print(f"\nTotal General Account Balance: ${reporte_corporativo_facturas['total_saldo']:,}")
+print(f"Total Accounts: {reporte_corporativo_facturas['total_facturas']}")
+print(f"\nPercentage of Uncollectible Invoices: {reporte_corporativo_facturas['porcentaje_incobrables']:.2f} %")
+print(f"Amount of Uncollectible Invoices: ${reporte_corporativo_facturas['monto_incobrables']:,}")
+print(f"\nBest Client: {reporte_corporativo_facturas['mejor_cliente']}")
+clientes_que_dejaron_de_comprar = reporte_corporativo_facturas['clientes_que_dejaron_de_comprar']
+print("\nClients Who Stopped Buying:")
+for cliente in clientes_que_dejaron_de_comprar:
+    print(f"- {cliente}")
+
+
+# Imprimir los datos de las facturas en el formato solicitado
+print('\n')
+print("CLIENTE".ljust(20), "FACTURA".ljust(20), "SALDO".ljust(20), "DÍAS VENCIMIENTO".ljust(20), "CLASIFICACIÓN".ljust(25), "FECHA GENERACIÓN FACTURA".ljust(25), "FECHA VENCIMIENTO".ljust(25))
+print("-" * 170)
+
+clientes_con_facturas.sort(key=lambda x: x['cliente']) #con esta función podemos ordenar alfabeticamente los clientes
+
+for cliente in clientes_con_facturas:
+    for factura in cliente["facturas"]:
+        dias_vencimiento = factura['dias_vencimiento']
+        saldo = factura['saldo']
+        if dias_vencimiento == 0:
+            clasificacion = "BUENO" #AL CORRIENTE
+        elif dias_vencimiento <= 30:
+            clasificacion = "BUENO" #MENOS DE 30 DÍAS
+        elif dias_vencimiento <= 60:
+            clasificacion = "REGULAR"  #MENOS DE 60 DÍAS
+        elif dias_vencimiento <= 90:
+            clasificacion = "MALO" #MENOS DE 90 DÍAS
+        else:
+            clasificacion = "INCOBRABLE" #MÁS DE 90 DÍAS
+        print(f"{cliente['cliente']:<20}", f"{factura['numero_factura']:<20}", f"${saldo:,}".ljust(20), f"{dias_vencimiento}".ljust(20), f"{clasificacion}".ljust(25), f"{factura['fecha_generacion'].date()}".ljust(25), f"{factura['fecha_vencimiento'].date()}".ljust(25))
