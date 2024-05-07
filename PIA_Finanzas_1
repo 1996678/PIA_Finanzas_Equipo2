@@ -100,30 +100,6 @@ def generar_clientes_con_facturas(num_clientes, num_facturas_max):
 # Generar clientes con nombres aleatorios
 clientes_con_facturas = generar_clientes_con_facturas(50, 4)
 
-def clasificar_facturas_por_antiguedad(clientes):
-    corriente = []
-    vencido_30 = []
-    vencido_60 = []
-    vencido_90 = []
-    vencido_mas_90 = []
-
-    for cliente in clientes:
-        for factura in cliente["facturas"]:
-            if factura["dias_vencimiento"] == 0:
-                corriente.append((cliente["cliente"], factura))
-            elif factura["dias_vencimiento"] <= 30:
-                vencido_30.append((cliente["cliente"], factura))
-            elif factura["dias_vencimiento"] <= 60:
-                vencido_60.append((cliente["cliente"], factura))
-            elif factura["dias_vencimiento"] <= 90:
-                vencido_90.append((cliente["cliente"], factura))
-            else:
-                vencido_mas_90.append((cliente["cliente"], factura))
-
-    return corriente, vencido_30, vencido_60, vencido_90, vencido_mas_90
-
-corriente, vencido_30, vencido_60, vencido_90, vencido_mas_90 = clasificar_facturas_por_antiguedad(clientes_con_facturas)
-
 def generar_reporte_corporativo_facturas(clientes):
     total_saldo = sum(factura["saldo"] for cliente in clientes for factura in cliente["facturas"])
     total_facturas = sum(len(cliente["facturas"]) for cliente in clientes)
@@ -142,23 +118,13 @@ def generar_reporte_corporativo_facturas(clientes):
     # Identificar clientes que dejaron de comprar (con facturas clasificadas como MALOS)
     clientes_que_dejaron_de_comprar = [cliente["cliente"] for cliente in clientes if any(factura["dias_vencimiento"] > 90 for factura in cliente["facturas"])]
 
-    # Clasificar clientes
-    buenos = [cliente["cliente"] for cliente in clientes if all(factura["dias_vencimiento"] == 0 for factura in cliente["facturas"])]
-    regular = [cliente["cliente"] for cliente in clientes if any(1 <= factura["dias_vencimiento"] <= 30 for factura in cliente["facturas"])]
-    malos = [cliente["cliente"] for cliente in clientes if any(31 <= factura["dias_vencimiento"] <= 60 for factura in cliente["facturas"])]
-    incobrables = [cliente["cliente"] for cliente in clientes if any(factura["dias_vencimiento"] > 90 for factura in cliente["facturas"])]
-
     reporte = {
         "total_saldo": total_saldo,
         "total_facturas": total_facturas,
         "porcentaje_incobrables": porcentaje_incobrables,
         "monto_incobrables": monto_incobrables,
         "mejor_cliente": mejor_cliente,
-        "clientes_que_dejaron_de_comprar": clientes_que_dejaron_de_comprar,
-        "buenos": buenos,
-        "regular": regular,
-        "malos": malos,
-        "incobrables": incobrables
+        "clientes_que_dejaron_de_comprar": clientes_que_dejaron_de_comprar
     }
 
     return reporte
